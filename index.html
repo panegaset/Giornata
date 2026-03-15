@@ -65,13 +65,14 @@ textarea::placeholder { color: #B0CFEA; }
 .slot-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #EAF4FF; }
 .slot-row:last-child { border-bottom: none; }
 .slot {
-padding: 9px 10px; cursor: pointer; min-height: 46px;
+padding: 8px 10px; cursor: pointer; min-height: 38px;
 display: flex; gap: 6px; align-items: flex-start;
 border-right: 1px solid #EAF4FF; transition: background 0.15s;
 }
 .slot:last-child { border-right: none; }
 .slot:active { background: #EAF6FF; }
 .slot-time { font-size: 11px; font-weight: 800; color: #5AABDB; min-width: 38px; padding-top: 1px; }
+.slot-time.half { color: #A8D4EE; font-weight: 600; }
 .slot-text { font-size: 12px; flex: 1; line-height: 1.4; color: #C5DFF0; }
 .slot-text.filled { color: #1A3C5A; }
 .mood-row { display: flex; flex-direction: column; gap: 5px; }
@@ -230,6 +231,13 @@ localStorage.setItem(storageKey(date), JSON.stringify(d));
 showSaved();
 }
 
+// Genera slot da 06:00 a 22:30
+var slotTimes = [];
+for (var h = 6; h <= 22; h++) {
+slotTimes.push((h < 10 ? '0' : '') + h + ':00');
+slotTimes.push((h < 10 ? '0' : '') + h + ':30');
+}
+
 function loadDay(date) {
 var d = getDay(date);
 document.getElementById('intention').value = d.intention || '';
@@ -257,13 +265,11 @@ dateInput.addEventListener('change', function() { loadDay(dateInput.value); });
 document.getElementById(id).addEventListener('input', saveDay);
 });
 
-var slotPairs = [
-["06:00","07:00"],["08:00","09:00"],["10:00","11:00"],
-["12:00","13:00"],["14:00","15:00"],["16:00","17:00"],
-["18:00","19:00"],["20:00","21:00"],["22:00",""]
-];
-var slotTimes = [];
-slotPairs.forEach(function(p) { p.forEach(function(s) { if(s) slotTimes.push(s); }); });
+// Costruisce la griglia a coppie
+var slotPairs = [];
+for (var i = 0; i < slotTimes.length; i += 2) {
+slotPairs.push([slotTimes[i], slotTimes[i+1] || '']);
+}
 
 var grid = document.getElementById('scheduleGrid');
 slotPairs.forEach(function(pair) {
@@ -272,9 +278,10 @@ row.className = 'slot-row';
 pair.forEach(function(slot) {
 var cell = document.createElement('div');
 if (!slot) { row.appendChild(cell); return; }
+var isHalf = slot.indexOf(':30') !== -1;
 cell.className = 'slot';
-cell.innerHTML = '<span class="slot-time">' + slot + '</span><span class="slot-text" id="text-' + slot.replace(':','-') + '">···</span>';
-cell.addEventListener('click', function() { openModal(slot); });
+cell.innerHTML = '<span class="slot-time' + (isHalf ? ' half' : '') + '">' + slot + '</span><span class="slot-text" id="text-' + slot.replace(':','-') + '">···</span>';
+cell.addEventListener('click', (function(s) { return function() { openModal(s); }; })(slot));
 row.appendChild(cell);
 });
 grid.appendChild(row);
